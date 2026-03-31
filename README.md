@@ -32,6 +32,31 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Smarter Scheduling
+
+The `Scheduler` class has been extended with the following features:
+
+- **Priority sorting with a lambda** — `generate_plan()` uses an inline lambda and a `priority_map` dict to sort tasks HIGH → MEDIUM → LOW. Unknown priorities fall safely to the end.
+- **Filter by pet** — `filter_by_pet(pet_name)` returns only the tasks belonging to a specific pet, preserving priority order from the generated plan.
+- **Recurring tasks** — `Task` now has a `frequency` field (`"Once"`, `"Daily"`, `"Weekly"`). Calling `mark_complete()` on a daily task prints a reminder to schedule the next occurrence.
+- **Conflict detection** — `detect_conflicts()` sums all task durations and warns if they exceed the owner's `total_available_time`.
+
+# Testing PawPal+
+
+Tests are written with **pytest** and live in `tests/test_pawpal.py`. Run them with:
+
+```bash
+pytest tests/
+```
+
+The test suite covers:
+
+- Marking a task complete and verifying the `completed` flag flips ★★★★★
+- Adding a task to a pet and confirming the task list grows ★★★★★
+- Chronological ordering — `generate_plan()` sorts tasks by `start_time`, earliest first ★★★★☆
+- Recurring daily tasks — completing a `"Daily"` task returns a new task scheduled exactly 24 hours later ★★★★☆
+- **Scheduling overlap detection** — `detect_conflicts()` correctly identifies pairs of tasks whose times overlap, returning them as a list rather than a generic warning ★★★★★
+
 ### Suggested workflow
 
 1. Read the scenario carefully and identify requirements and edge cases.

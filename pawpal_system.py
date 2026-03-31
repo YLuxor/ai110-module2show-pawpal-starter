@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
 from enum import Enum
 
 
@@ -35,17 +36,26 @@ class Task:
     pet: Optional[Pet] = None
     completed: bool = False
     frequency: str = "Once"  # Options: "Once", "Daily", "Weekly"
+    start_time: Optional[datetime] = None
 
     def is_high_priority(self) -> bool:
         """Return True if the task's priority is HIGH."""
         return self.priority == Priority.HIGH
 
-    def mark_complete(self) -> None:
-        """Mark this task as completed."""
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task as completed. Returns a new Task if frequency is Daily."""
         self.completed = True
         if self.frequency == "Daily":
-            print(f"Scheduling next occurrence for {self.title} tomorrow!")
-            # In a real app, you'd create a duplicate task here
+            next_time = self.start_time + timedelta(hours=24) if self.start_time else None
+            return Task(
+                title=self.title,
+                duration_minutes=self.duration_minutes,
+                priority=self.priority,
+                pet=self.pet,
+                frequency=self.frequency,
+                start_time=next_time,
+            )
+        return None
 
 
 class Owner:
@@ -69,12 +79,11 @@ class Scheduler:
         self.plan: List[Task] = []
 
     def generate_plan(self) -> List[Task]:
-        """Collect and sort all owner tasks by priority (HIGH first)."""
-        priority_map = {"high": 0, "medium": 1, "low": 2}
+        """Collect and sort all owner tasks by start_time (earliest first)."""
         all_tasks = self.owner.get_all_tasks()
         self.plan = sorted(
             all_tasks,
-            key=lambda t: priority_map.get(t.priority.value, 3)
+            key=lambda t: t.start_time or datetime.max
         )
         return self.plan
 
@@ -82,12 +91,16 @@ class Scheduler:
         """Return only tasks belonging to a specific pet."""
         return [t for t in self.plan if t.pet and t.pet.name == pet_name]
 
-    def detect_conflicts(self) -> str:
-        """Simple check: returns a warning if total task time exceeds available time."""
-        total_task_time = sum(t.duration_minutes for t in self.plan)
-        if total_task_time > self.total_available_time:
-            return f"Warning: You have {total_task_time} mins of tasks but only {self.total_available_time} mins available!"
-        return "No timing conflicts detected."
+    def detect_conflicts(self) -> List[Tuple[Task, Task]]:
+        """Return a list of (Task, Task) pairs whose scheduled times overlap."""
+        conflicts = []
+        timed = [t for t in self.plan if t.start_time is not None]
+        for i, a in enumerate(timed):
+            a_end = a.start_time + timedelta(minutes=a.duration_minutes)
+            for b in timed[i + 1:]:
+                if b.start_time < a_end:
+                    conflicts.append((a, b))
+        return conflicts
 
     def get_reasoning(self) -> str:
         """Return a human-readable explanation of the generated plan."""
