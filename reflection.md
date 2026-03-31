@@ -6,13 +6,24 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+ANS: Classes I included are: Pet for profile and Task for priority and duration_minutes
+Responsibilities assigned are: Task class ensures validation of data enter 
+Scheduler takes the lists of tasks from st.session_state to sort them based on owner's availability to create a daily schedule.
+
+3 core actions 
+Create pet profile, Build a Task queue, Create scheduling with daily tasks
+
+List of Building Blocks
+Class: Pet; Attributes: Name, species, owner_name; Methods: --str--
+Class: Task; Attributes: title, duration_minutes, priority; Methods: is_high_priority()
+Class: Scheduler; Attributes: task_list, total_available_time; Methods: generate_plan(), get_reasoning()
+
 
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
-
----
+ANS: Yes, the design changed. Making a Task class. To make it easier when adding methods instead relying on raw key value pairs. 
 
 ## 2. Scheduling Logic and Tradeoffs
 
