@@ -1,4 +1,5 @@
 import streamlit as st
+from pawpal_system import Owner, Pet, Task, Scheduler
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
@@ -46,8 +47,9 @@ species = st.selectbox("Species", ["dog", "cat", "other"])
 st.markdown("### Tasks")
 st.caption("Add a few tasks. In your final version, these should feed into your scheduler.")
 
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+if "owner" not in st.session_state:
+    # Initialize our main data object
+    st.session_state.owner = Owner("Xaden")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -58,13 +60,23 @@ with col3:
     priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
 
 if st.button("Add task"):
-    st.session_state.tasks.append(
-        {"title": task_title, "duration_minutes": int(duration), "priority": priority}
-    )
+    # 1. Create a new Task object using your class
+    new_task = Task(task_title, duration, priority)
 
-if st.session_state.tasks:
+    # 2. In a real app, you'd select which pet, but for now,
+    # let's assume we add it to the first pet in our owner's list
+    if not st.session_state.owner.pets:
+        # Create a default pet if none exists so the app doesn't crash
+        default_pet = Pet(pet_name, species, owner_name)
+        st.session_state.owner.add_pet(default_pet)
+
+    st.session_state.owner.pets[0].add_task(new_task)
+    st.success(f"Added '{task_title}' to {st.session_state.owner.pets[0].name}'s list!")
+
+all_tasks = st.session_state.owner.get_all_tasks()
+if all_tasks:
     st.write("Current tasks:")
-    st.table(st.session_state.tasks)
+    st.table([{"title": t.title, "duration_minutes": t.duration_minutes, "priority": t.priority} for t in all_tasks])
 else:
     st.info("No tasks yet. Add one above.")
 

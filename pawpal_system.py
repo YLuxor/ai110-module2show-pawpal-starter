@@ -34,6 +34,7 @@ class Task:
     priority: Priority
     pet: Optional[Pet] = None
     completed: bool = False
+    frequency: str = "Once"  # Options: "Once", "Daily", "Weekly"
 
     def is_high_priority(self) -> bool:
         """Return True if the task's priority is HIGH."""
@@ -42,6 +43,9 @@ class Task:
     def mark_complete(self) -> None:
         """Mark this task as completed."""
         self.completed = True
+        if self.frequency == "Daily":
+            print(f"Scheduling next occurrence for {self.title} tomorrow!")
+            # In a real app, you'd create a duplicate task here
 
 
 class Owner:
@@ -66,9 +70,24 @@ class Scheduler:
 
     def generate_plan(self) -> List[Task]:
         """Collect and sort all owner tasks by priority (HIGH first)."""
+        priority_map = {"high": 0, "medium": 1, "low": 2}
         all_tasks = self.owner.get_all_tasks()
-        self.plan = sorted(all_tasks, key=lambda t: PRIORITY_ORDER[t.priority])
+        self.plan = sorted(
+            all_tasks,
+            key=lambda t: priority_map.get(t.priority.value, 3)
+        )
         return self.plan
+
+    def filter_by_pet(self, pet_name: str) -> List[Task]:
+        """Return only tasks belonging to a specific pet."""
+        return [t for t in self.plan if t.pet and t.pet.name == pet_name]
+
+    def detect_conflicts(self) -> str:
+        """Simple check: returns a warning if total task time exceeds available time."""
+        total_task_time = sum(t.duration_minutes for t in self.plan)
+        if total_task_time > self.total_available_time:
+            return f"Warning: You have {total_task_time} mins of tasks but only {self.total_available_time} mins available!"
+        return "No timing conflicts detected."
 
     def get_reasoning(self) -> str:
         """Return a human-readable explanation of the generated plan."""
