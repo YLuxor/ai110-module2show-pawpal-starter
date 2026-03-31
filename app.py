@@ -86,15 +86,19 @@ st.subheader("Build Schedule")
 st.caption("This button should call your scheduling logic once you implement it.")
 
 if st.button("Generate schedule"):
-    st.warning(
-        "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
-    )
-    st.markdown(
-        """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-    )
+    scheduler = Scheduler(st.session_state.owner, total_available_time=120)
+    plan = scheduler.generate_plan()
+
+    if plan:
+        st.table([
+            {"title": t.title, "duration_minutes": t.duration_minutes, "priority": t.priority}
+            for t in plan
+        ])
+
+        conflicts = scheduler.detect_conflicts()
+        if conflicts:
+            st.warning("⚠️ You have overlapping tasks!")
+        else:
+            st.success("No scheduling conflicts detected.")
+    else:
+        st.info("No tasks to schedule. Add some tasks above.")
